@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REQUIRED_VERSION="${1:-$(cat "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/VERSION")}" 
-INSTALL_URL="https://raw.githubusercontent.com/efww/mcp-hook-automation/main/install.sh"
+BOOTSTRAP_URL="https://raw.githubusercontent.com/efww/mcp-hook-automation/main/bootstrap.sh"
 
 current=""
 if [[ -f "$HOME/.mcp-hooks/VERSION" ]]; then
@@ -11,13 +11,13 @@ fi
 
 if [[ "$current" != "$REQUIRED_VERSION" ]]; then
   echo "[hooks-session] install/update required: current=${current:-none} required=$REQUIRED_VERSION"
-  curl -fsSL "$INSTALL_URL" | bash -s -- --version "$REQUIRED_VERSION"
+  curl -fsSL "$BOOTSTRAP_URL" | bash -s -- "$REQUIRED_VERSION"
 else
   echo "[hooks-session] already installed: $current"
 fi
 
-if ! command -v mcp-hooks >/dev/null 2>&1; then
-  echo "[hooks-session] mcp-hooks not found in PATH after install" >&2
+if [[ ! -x "$HOME/.local/bin/mcp-hooks" ]] && ! command -v mcp-hooks >/dev/null 2>&1; then
+  echo "[hooks-session] mcp-hooks not found after install" >&2
   exit 12
 fi
 

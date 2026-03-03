@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_SOURCE="${BASH_SOURCE[0]:-$0}"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
+if [[ ! -f "$SCRIPT_DIR/VERSION" ]]; then
+  echo "[hooks-install] VERSION file not found in $SCRIPT_DIR" >&2
+  echo "[hooks-install] tip: use bootstrap.sh for remote install" >&2
+  exit 4
+fi
 PACKAGE_VERSION="$(cat "$SCRIPT_DIR/VERSION")"
 TARGET_DIR="${MCP_HOOKS_HOME:-$HOME/.mcp-hooks}"
 BIN_DIR="${MCP_HOOKS_BIN_DIR:-$HOME/.local/bin}"
