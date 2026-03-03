@@ -2,13 +2,14 @@
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
-  echo "usage: $0 \"완료 내용(한글)\""
+  echo "usage: $0 \"완료 내용(한글 문장 포함)\""
   exit 2
 fi
 
 message="$*"
-if [[ "$message" =~ [A-Za-z] ]]; then
-  echo "error: 내용은 한글 위주로 작성해주세요."
+lang_check_message="$(printf '%s' "$message" | sed -E 's/\([Hh][Oo][Oo]?[Kk][[:space:]]+[Tt][Ee][Ss][Tt]\)//g')"
+if ! printf '%s' "$lang_check_message" | grep -Eq '[가-힣]'; then
+  echo "error: 내용에 한글 문장을 최소 1회 포함해주세요."
   exit 2
 fi
 
