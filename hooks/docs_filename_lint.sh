@@ -1,18 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-target_dir="${1:-docs}"
+target_path="${1:-docs}"
 marker="${HOOK_TEST_MARKER:-}"
 
-if [[ ! -d "$target_dir" ]]; then
-  echo "[docs-hook] skip: docs 디렉터리 없음 ($target_dir) ${marker}"
+if [[ ! -e "$target_path" ]]; then
+  echo "[docs-hook] skip: 경로 없음 ($target_path) ${marker}"
   exit 0
 fi
 
 invalid=0
 files_count=0
 seen_file="$(mktemp)"
-trap 'rm -f "$seen_file"' EXIT
+scan_list="$(mktemp)"
+trap 'rm -f "$seen_file" "$scan_list"' EXIT
+
+if [[ -d "$target_path" ]]; then
+  find "$target_path" -type f -name '*.md' 2>/dev/null | sort > "$scan_list"
+elif [[ -f "$target_path" ]]; then
+  if [[ "$target_path" == *.md ]]; then
+    printf '%s\n' "$target_path" > "$scan_list"
+  else
+    echo "[docs-hook] skip: md 파일이 아님 ($target_path) ${marker}"
+    exit 0
+  fi
+else
+  echo "[docs-hook] skip: 지원하지 않는 경로 타입 ($target_path) ${marker}"
+  exit 0
+fi
 
 while IFS= read -r f; do
   [[ -z "$f" ]] && continue
@@ -31,7 +46,7 @@ while IFS= read -r f; do
   else
     printf '%s\t%s\n' "$prefix" "$f" >> "$seen_file"
   fi
-done < <(find "$target_dir" -type f -name '*.md' 2>/dev/null | sort)
+done < "$scan_list"
 
 if [[ "$invalid" -eq 1 ]]; then
   echo "[docs-hook] blocked: docs 파일명 규칙 위반 ${marker}" >&2

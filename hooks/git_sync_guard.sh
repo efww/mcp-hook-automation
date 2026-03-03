@@ -2,17 +2,24 @@
 set -euo pipefail
 
 marker="${HOOK_TEST_MARKER:-}"
-if [[ $# -lt 2 ]]; then
-  echo "[git-hook] usage: $0 git <pull|push|...> ${marker}" >&2
+if [[ $# -lt 1 ]]; then
+  echo "[git-hook] usage: $0 <pull|push|...>  (or: $0 git <pull|push|...>) ${marker}" >&2
   exit 2
 fi
 
-if [[ "$1" != "git" ]]; then
-  echo "[git-hook] blocked: 첫 인자는 git 이어야 합니다. ${marker}" >&2
-  exit 46
+# Accept both forms:
+#   mcp-hooks git pull
+#   mcp-hooks git git pull   (legacy)
+if [[ "${1:-}" == "git" ]]; then
+  shift
 fi
 
-subcmd="$2"
+if [[ $# -lt 1 ]]; then
+  echo "[git-hook] usage: $0 <pull|push|...>  (or: $0 git <pull|push|...>) ${marker}" >&2
+  exit 2
+fi
+
+subcmd="$1"
 
 run_cmd() {
   "$@"
@@ -34,8 +41,8 @@ if [[ "$subcmd" == "pull" ]]; then
     echo "[git-hook] dirty 감지 -> stash 생성: $stash_msg ${marker}"
   fi
 
-  # pull은 ff-only로 고정
-  run_cmd git pull --ff-only
+  # pull은 ff-only로 고정, 추가 인자(remote/branch 등)는 유지
+  run_cmd git pull --ff-only "${@:2}"
 
   if [[ "$stashed" -eq 1 ]]; then
     echo "[git-hook] stash 요약(수동 확인 필요): ${marker}"
@@ -47,9 +54,9 @@ if [[ "$subcmd" == "pull" ]]; then
 fi
 
 if [[ "$subcmd" == "push" ]]; then
-  run_cmd "$@"
+  run_cmd git "$@"
   exit 0
 fi
 
 # 기타 git 명령은 통과
-run_cmd "$@"
+run_cmd git "$@"
